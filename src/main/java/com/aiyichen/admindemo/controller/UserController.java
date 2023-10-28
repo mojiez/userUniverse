@@ -5,13 +5,15 @@ import com.aiyichen.admindemo.service.UserService;
 import com.aiyichen.admindemo.utils.R;
 import com.aiyichen.admindemo.utils.UserLoginRequest;
 import com.aiyichen.admindemo.utils.UserRegisterRequest;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.util.List;
+
+import static com.aiyichen.admindemo.constant.UserConstant.*;
 
 @RestController
 @RequestMapping("/user")
@@ -43,5 +45,41 @@ public class UserController {
         String password = userLoginRequest.getPassword();
         User user = userService.userDoLogin(account, password, request);
         return R.ok().data("safetyUser",user);
+    }
+
+    // 实现模糊查询
+    @GetMapping("/search/{useraccount}")
+    public R userSearch(@PathVariable String useraccount,HttpServletRequest request){
+        boolean role = getRole(request);
+        if (!role){
+            return R.error();
+        }
+        // 有权限 开始查询
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        wrapper.like("user_account",useraccount);
+        List<User> list = userService.list(wrapper);
+        return R.ok().data("userlist",list);
+    }
+    // 实现分页查询 TODO
+
+    // 实现删除
+    @PostMapping("/deleteUser") //根据id删除
+    public R deleteUser(@RequestBody long id,HttpServletRequest request){
+        boolean role = getRole(request);
+        if(!role){
+            return R.error();
+        }
+        // 有权限 开始删除
+        boolean b = userService.removeById(id);
+        if (!b) return R.error().message("有权限但是删除失败");
+        return R.ok();
+    }
+    private boolean getRole(HttpServletRequest request){
+        Object userObject = request.getSession().getAttribute(USER_LOGIN_STATE);
+        User user = (User) userObject;
+        if (user == null || user.getRole() != ADMIN_ROLE){
+            return false;
+        }
+        return true;
     }
 }

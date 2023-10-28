@@ -13,13 +13,15 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.aiyichen.admindemo.constant.UserConstant.USER_LOGIN_STATE;
+
 /**
  *
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
-    private static final String USER_LOGIN_STATE = "userLoginState";
+
 
     @Autowired
     private UserMapper userMapper;
@@ -131,6 +133,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         safetyUser.setPhone(user.getPhone());
         safetyUser.setCreateTime(user.getCreateTime());
         safetyUser.setUpdateTime(user.getUpdateTime());
+        safetyUser.setRole(user.getRole());
 //        safetyUser.setIsDeleted();
 
 
