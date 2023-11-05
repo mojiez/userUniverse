@@ -35,6 +35,14 @@ public class UserController {
         return R.ok().data("id",id);
     }
 
+    @GetMapping("/userList")
+    public R getUserList(HttpServletRequest request){
+        boolean role = getRole(request);
+        if ((!role)) return R.error();
+        List<User> users = userService.list();
+        return R.ok().data("users",users);
+    }
+
     // 实现登陆接口
     @PostMapping("/login")
     public R userDoLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request){
@@ -47,6 +55,13 @@ public class UserController {
         return R.ok().data("safetyUser",user);
     }
 
+    // 实现注销接口
+    @PostMapping("/logout")
+    public R userLogout(HttpServletRequest request){
+        if(request == null) return R.error();
+        int i = userService.userLogout(request);
+        return R.ok();
+    }
     // 实现模糊查询
     @GetMapping("/search/{useraccount}")
     public R userSearch(@PathVariable String useraccount,HttpServletRequest request){
@@ -62,6 +77,18 @@ public class UserController {
     }
     // 实现分页查询 TODO
 
+    // 查询单一用户
+    @GetMapping("/current")
+    public R currentUser(HttpServletRequest request){
+        Object object = request.getSession().getAttribute(USER_LOGIN_STATE);
+        User user = (User)object;
+        if(user==null){
+            return R.error();
+        }
+        //如果 用户不等于空 那么应该去数据库里查找最新的 因为session里面的可能不是最新的
+        User user1 = userService.getById(user.getId());
+        return R.ok().data("currentUser",user1);
+    }
     // 实现删除
     @PostMapping("/deleteUser") //根据id删除
     public R deleteUser(@RequestBody long id,HttpServletRequest request){

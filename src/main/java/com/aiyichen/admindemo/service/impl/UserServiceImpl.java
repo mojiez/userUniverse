@@ -1,5 +1,7 @@
 package com.aiyichen.admindemo.service.impl;
 
+import com.aiyichen.admindemo.exception.BusinessException;
+import com.aiyichen.admindemo.utils.ErrorCode;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.aiyichen.admindemo.entity.User;
@@ -87,7 +89,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return null;
         }
         if(account.length()<4){
-            return null;
+//            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"账户长度小于4");
         }
         if(password.length()<8){
             return null;
@@ -142,6 +145,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 但是登陆状态要保存下来（保存到服务器端 使用request保存）
         request.getSession().setAttribute(USER_LOGIN_STATE,safetyUser);
         return safetyUser;
+    }
+
+    @Override
+    public int userLogout(HttpServletRequest request) {
+        request.getSession().removeAttribute(USER_LOGIN_STATE);
+        return 1;
     }
 }
 

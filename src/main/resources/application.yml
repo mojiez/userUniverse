@@ -15,4 +15,7 @@ server:
   reactive:
     session:
       timeout: 86400
+  port: 8080
+  servlet:
+    context-path: /api
 
