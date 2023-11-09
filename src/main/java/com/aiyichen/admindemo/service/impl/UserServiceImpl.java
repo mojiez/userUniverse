@@ -9,9 +9,11 @@ import com.aiyichen.admindemo.service.UserService;
 import com.aiyichen.admindemo.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -151,6 +153,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public int userLogout(HttpServletRequest request) {
         request.getSession().removeAttribute(USER_LOGIN_STATE);
         return 1;
+    }
+
+    @Override
+    public List<User> searchUsersByTags(List<String> tagNameList) {
+        if(CollectionUtils.isEmpty(tagNameList)) throw new BusinessException(ErrorCode.PARAMS_ERROR);
+//        QueryWrapper wrapper = new QueryWrapper<>();
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        // 拼接
+        // 遍历list
+        for(String tag:tagNameList){
+            wrapper = wrapper.like("tags",tag);
+        }
+        List<User> users = userMapper.selectList(wrapper);
+
+        // TODO 这里返回的应该是安全的用户数据
+        return users;
     }
 }
 

@@ -4,6 +4,7 @@ import com.aiyichen.admindemo.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  *
@@ -16,4 +17,5 @@ public interface UserService extends IService<User> {
     User userDoLogin(String account, String password, HttpServletRequest request);
 
     int userLogout(HttpServletRequest request);
+    List<User> searchUsersByTags(List<String> tagNameList);
 }

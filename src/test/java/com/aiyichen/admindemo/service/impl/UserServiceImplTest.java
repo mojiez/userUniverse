@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 class UserServiceImplTest {
@@ -30,5 +34,14 @@ class UserServiceImplTest {
         System.out.println(id);
         Assertions.assertTrue(id>0);
 
+    }
+
+    @Test
+    void searchUsersByTags() {
+        List<String> tagNameList = Arrays.asList("java","python","guonan");
+        List<User> users = userService.searchUsersByTags(tagNameList);
+        for(User user:users){
+            System.out.println(user.getUserName());
+        }
     }
 }
