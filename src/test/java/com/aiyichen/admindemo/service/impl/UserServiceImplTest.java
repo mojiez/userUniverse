@@ -44,4 +44,13 @@ class UserServiceImplTest {
             System.out.println(user.getUserName());
         }
     }
+
+    @Test
+    void searchUsersByTagsMem() {
+        List<String> tagNameList = Arrays.asList("java","python","guonan");
+        List<User> users = userService.searchUsersByTagsMem(tagNameList);
+        for (User user:users){
+            System.out.println(user.getUserName());
+        }
+    }
 }

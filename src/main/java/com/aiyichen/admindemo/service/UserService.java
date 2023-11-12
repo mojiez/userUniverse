@@ -18,4 +18,6 @@ public interface UserService extends IService<User> {
 
     int userLogout(HttpServletRequest request);
     List<User> searchUsersByTags(List<String> tagNameList);
+    List<User> searchUsersByTagsMem(List<String> tagNameList);
+    List<User> searchUsersByTagDatasourse(List<String> tagNameList);
 }

@@ -7,15 +7,19 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.aiyichen.admindemo.entity.User;
 import com.aiyichen.admindemo.service.UserService;
 import com.aiyichen.admindemo.mapper.UserMapper;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
-
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.aiyichen.admindemo.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -26,7 +30,7 @@ import static com.aiyichen.admindemo.constant.UserConstant.USER_LOGIN_STATE;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
 
-
+//    private static final Type TAG_SET_TYPE = new TypeToken<Set<String>>() {}.getType();
     @Autowired
     private UserMapper userMapper;
     @Override
@@ -168,6 +172,64 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         List<User> users = userMapper.selectList(wrapper);
 
         // TODO 这里返回的应该是安全的用户数据
+        return users;
+    }
+
+    @Override
+    public List<User> searchUsersByTagsMem(List<String> tagNameList) {
+//        List<User> userlist=new ArrayList<>();
+//        for (String string :tagNameList) {
+//        	userlist.add(convertFromString(string));
+//        }
+//        return userlist;
+        if(CollectionUtils.isEmpty(tagNameList)) throw new BusinessException((ErrorCode.PARAMS_ERROR));
+        // 什么是序列化？
+        // json序列化是把javabean对象转换为json格式的东西
+
+        // 策略一： 使用内存查询
+        // 首先查询所有用户
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        List<User> users = userMapper.selectList(queryWrapper);
+
+        // 初始化一个gson
+        Gson gson = new Gson();
+
+//        users.stream()
+//        将要处理的元素集合看成一种流，流在管道中传输（元素流）
+//        users.stream().filter()
+//        filter 过滤 以下代码片段使用filter过滤出空字符串
+//        userList.stream().filter(string -> string.isEmpty())
+        List<User> finalUsers = users.stream().filter(user -> {
+            String tagstr = user.getTags();
+            // 注意： 此时取出来的tagstr是json数据
+            if (StringUtils.isBlank(tagstr)) return false;
+
+            // 这一段啥意思没看明白 将原本的json字符串转化为一个 set集合 每个元素是原来的json字符串
+//            Set<String> tempTagNameSet = gson.fromJson(tagstr, new TypeToken<Set<String>>() {
+//            }.getType());
+//            Set<String> tempTagNameSet = gson.fromJson(tagstr, TAG_SET_TYPE);
+            Set<String> tempTagNameSet =  gson.fromJson(tagstr,new TypeToken<Set<String>>(){}.getType());
+            for (String tagName : tagNameList) {
+                if (!tempTagNameSet.contains(tagName)) {
+                    return false;
+                }
+            }
+            return true;
+        }).collect(Collectors.toList());
+        //就是users里面的每一个用户里面的tag字段
+// 如果包含了每一个我要求的tag 就返回true 不过滤 否则就过滤掉
+        return finalUsers;
+    }
+
+    @Override
+    public List<User> searchUsersByTagDatasourse(List<String> tagNameList) {
+        if(CollectionUtils.isEmpty(tagNameList)) throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        // 拼接tag
+        for (String tag : tagNameList){
+            queryWrapper = queryWrapper.like("tags",tag);
+        }
+        List<User> users = userMapper.selectList(queryWrapper);
         return users;
     }
 }
