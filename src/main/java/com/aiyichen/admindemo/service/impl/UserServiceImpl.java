@@ -200,14 +200,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 //        filter 过滤 以下代码片段使用filter过滤出空字符串
 //        userList.stream().filter(string -> string.isEmpty())
         List<User> finalUsers = users.stream().filter(user -> {
+//            String tagstr = gson.toJson(user.getTags());
             String tagstr = user.getTags();
             // 注意： 此时取出来的tagstr是json数据
             if (StringUtils.isBlank(tagstr)) return false;
-
+//            tagstr = gson.toJson(tagstr);
             // 这一段啥意思没看明白 将原本的json字符串转化为一个 set集合 每个元素是原来的json字符串
 //            Set<String> tempTagNameSet = gson.fromJson(tagstr, new TypeToken<Set<String>>() {
 //            }.getType());
 //            Set<String> tempTagNameSet = gson.fromJson(tagstr, TAG_SET_TYPE);
+//            Set<String> tempTagNameSet =  gson.fromJson(tagstr,new TypeToken<Set<String>>(){}.getType());
             Set<String> tempTagNameSet =  gson.fromJson(tagstr,new TypeToken<Set<String>>(){}.getType());
             for (String tagName : tagNameList) {
                 if (!tempTagNameSet.contains(tagName)) {
