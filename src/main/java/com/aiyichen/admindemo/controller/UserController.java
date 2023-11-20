@@ -1,22 +1,25 @@
 package com.aiyichen.admindemo.controller;
 
 import com.aiyichen.admindemo.entity.User;
+import com.aiyichen.admindemo.exception.BusinessException;
 import com.aiyichen.admindemo.service.UserService;
-import com.aiyichen.admindemo.utils.R;
-import com.aiyichen.admindemo.utils.UserLoginRequest;
-import com.aiyichen.admindemo.utils.UserRegisterRequest;
+import com.aiyichen.admindemo.utils.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.Collection;
 import java.util.List;
 
 import static com.aiyichen.admindemo.constant.UserConstant.*;
 
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = {"http://localhost:3000/"})
+//@CrossOrigin
 public class UserController {
     @Autowired
     private UserService userService;
@@ -43,6 +46,18 @@ public class UserController {
         return R.ok().data("users",users);
     }
 
+    @GetMapping("/search/tags")
+    public BaseResponse<List<User>> searchUsersByTags(@RequestParam List<String> tagList){
+        // 使用@RequestParam注解相当于告诉服务器这个参数要从http请求中的url获取
+        // http://example.com/search?tagList=value1&tagList=value2
+        // 使用了@RequestParam 能从上述参数中获取到 tagList = [values1,values2]
+
+        if(CollectionUtils.isEmpty(tagList)){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        List<User> users = userService.searchUsersByTagsMem(tagList);
+        return ResultUtil.success(users);
+    }
     // 实现登陆接口
     @PostMapping("/login")
     public R userDoLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request){
