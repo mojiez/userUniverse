@@ -21,6 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.aiyichen.admindemo.constant.UserConstant.ADMIN_ROLE;
 import static com.aiyichen.admindemo.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
@@ -233,6 +234,42 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         List<User> users = userMapper.selectList(queryWrapper);
         return users;
+    }
+
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        // 从request中获取到当前登录的用户的信息
+        if (request == null){
+            return null;
+        }
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (userObj == null){
+            // session里面没有保存用户信息
+            // 这个错误码好像不太对 TODO
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        return (User) userObj;
+    }
+
+    @Override
+    public int updateUser(User user, User loginUser) {
+        // 先鉴权
+        // 管理员能修改任意用户的信息
+        // 非管理员只能修改自己的信息
+        Long id = user.getId();
+        if (id <= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        if (!(isAdmin(loginUser))&&loginUser.getId()!=user.getId()){
+            // 既不是管理员
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean isAdmin(User loginUser) {
+        return (loginUser != null && loginUser.getRole()==ADMIN_ROLE);
     }
 }
 
