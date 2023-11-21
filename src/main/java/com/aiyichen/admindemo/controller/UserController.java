@@ -60,8 +60,10 @@ public class UserController {
         // 这里的loginUser肯定不为空 为空已经抛出了
 
         // 鉴权放到updateUser里面一起处理
-
+        int success = userService.updateUser(user, loginUser);
+        return ResultUtil.success(success);
     }
+
     @GetMapping("/search/tags")
     public BaseResponse<List<User>> searchUsersByTags(@RequestParam List<String> tagList){
         // 使用@RequestParam注解相当于告诉服务器这个参数要从http请求中的url获取
