@@ -18,7 +18,7 @@ import static com.aiyichen.admindemo.constant.UserConstant.*;
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = {"http://localhost:3000/"})
+@CrossOrigin(origins = {"http://localhost:3000/"},allowCredentials = "true")
 //@CrossOrigin
 public class UserController {
     @Autowired
