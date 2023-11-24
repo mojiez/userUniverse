@@ -261,13 +261,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
-        if (!(isAdmin(loginUser))&&loginUser.getId()!=user.getId()){
+        if (!(isAdmin(loginUser))&&!loginUser.getId().equals(user.getId())){
             // 既不是管理员 id
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
         // 有权限 可以修改 先看数据库里有没有对应的数据
         User user1 = userMapper.selectById(id);
         if(user1 == null) throw new BusinessException(ErrorCode.PARAMS_ERROR);
+
         return userMapper.updateById(user);
     }
 

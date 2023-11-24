@@ -46,6 +46,13 @@ public class UserController {
         return R.ok().data("users",users);
     }
 
+    @GetMapping("/recommend")
+    public BaseResponse<List<User>> recommendUsers(HttpServletRequest request){
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        List<User> userList = userService.list();
+        return ResultUtil.success(userList);
+    }
+
     @PostMapping("/update")
     public BaseResponse<Integer> updateUser(@RequestBody User user,HttpServletRequest request){
         // 参数user： 要修改的用户
