@@ -151,6 +151,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 记录用户的登陆状态
         // 但是登陆状态要保存下来（保存到服务器端 使用request保存）
         request.getSession().setAttribute(USER_LOGIN_STATE,safetyUser);
+
+        // 这里要保存到redis上
         return safetyUser;
     }
 

@@ -8,7 +8,7 @@ spring:
       matching-strategy: ant_path_matcher
 
   redis:
-    database: 0
+    database: 1
     port: 6379
     host: 122.51.116.77
     password: 123456

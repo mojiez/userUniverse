@@ -5,25 +5,34 @@ import com.aiyichen.admindemo.exception.BusinessException;
 import com.aiyichen.admindemo.service.UserService;
 import com.aiyichen.admindemo.utils.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.aiyichen.admindemo.constant.UserConstant.*;
 
 @RestController
 @RequestMapping("/user")
+@Slf4j
 @CrossOrigin(origins = {"http://localhost:3000/"},allowCredentials = "true")
 //@CrossOrigin
 public class UserController {
     @Autowired
     private UserService userService;
 
+    @Resource
+    private RedisTemplate redisTemplate;
     // 如果说要使⽤json格式的参数的话，我们最好封装⼀个对象来记录所有的请求参数，然后我们在request包下新增⼀个对象叫UserRegisterRequest
     @PostMapping("/register")
     public R userRegister(@RequestBody UserRegisterRequest userRegisterRequest){
@@ -47,10 +56,51 @@ public class UserController {
     }
 
     @GetMapping("/recommend")
-    public BaseResponse<List<User>> recommendUsers(HttpServletRequest request){
+    public BaseResponse<Page<User>> recommendUsers(long pageSize, long pageNum, HttpServletRequest request){
+//        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        /**
+         * 直接将全部数据以列表的形式返回，一般不这么做 因为数据有可能有很多 一次请求会浪费很多时间
+         */
+//        List<User> userList = userService.list();
+//        return ResultUtil.success(userList);
+
+        /**
+         * 分页
+         * userService 里的page
+         */
+
+        // 接收一个page对象和一个查询条件的wrapper对象
+        // new Page<>(pageNum, pageSize) 创建一个page对象
+        /*
+        new Page<>(pageNum, pageSize) 为什么不写成new Page<User>(pageNum, pageSize)
+        因为java可以根据上下文自动推断范型 这个是UserService调用的 所以类型是User
+         */
+
+        // 注意 这里使用的是mybatis提供的page功能 要添加mybatisplus-config
+//        Page<User> page = userService.page(new Page<>(pageNum, pageSize), wrapper);
+//        return ResultUtil.success(page);
+
+        // 现在的情况是 不同用户的推荐是不同的 要把这个不同的推荐存到redis里面 模拟这种情况：
+        User currentUser = userService.getLoginUser(request);
+        String redis_key = String.format("admindemo:user:recommends:%s",currentUser.getId());
+        // 获取了一些redis提供给spring的操作
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+        // 如果有缓存 直接读取
+        Page<User> userPage = (Page<User>) valueOperations.get(redis_key);
+        if(userPage != null){
+            return ResultUtil.success(userPage);
+        }
+        // 如果没有缓存 或者查出来是空的话 直接查数据库
         QueryWrapper<User> wrapper = new QueryWrapper<>();
-        List<User> userList = userService.list();
-        return ResultUtil.success(userList);
+        Page<User> page = userService.page(new Page<>(pageNum, pageSize), wrapper);
+
+        // 得到的结果写入redis  设置好过期时间
+        try {
+            valueOperations.set(redis_key,page,30000, TimeUnit.MILLISECONDS);
+        }catch (Exception e){
+            log.error("set redis key error",e);
+        }
+        return ResultUtil.success(page);
     }
 
     @PostMapping("/update")
