@@ -48,6 +48,8 @@ public class TeamQuery {
      */
     private Integer status;
 
-
-
+    /**
+     * 搜索关键词 （同时对name和description 进行搜索）
+     */
+    private String searchText;
 }

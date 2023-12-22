@@ -4,6 +4,9 @@ import com.aiyichen.admindemo.entity.Team;
 import com.aiyichen.admindemo.entity.User;
 import com.aiyichen.admindemo.entity.dto.TeamQuery;
 import com.aiyichen.admindemo.entity.request.TeamAddRequest;
+import com.aiyichen.admindemo.entity.request.TeamJoinRequest;
+import com.aiyichen.admindemo.entity.request.TeamUpdateRequest;
+import com.aiyichen.admindemo.entity.vo.TeamUserVO;
 import com.aiyichen.admindemo.exception.BusinessException;
 import com.aiyichen.admindemo.service.TeamService;
 import com.aiyichen.admindemo.service.UserService;
@@ -14,6 +17,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.validation.BindingResultUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -66,7 +70,18 @@ public class TeamController {
         }
         return ResultUtil.success(true);
     }
-
+    @PostMapping("/team/update")
+    public BaseResponse<Boolean> updateTeamNew(@RequestBody TeamUpdateRequest teamUpdateRequest,HttpServletRequest request) {
+        if (teamUpdateRequest == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.updateTeam(teamUpdateRequest,loginUser);
+        if (!result) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"更新队伍失败");
+        }
+        return ResultUtil.success(true);
+    }
     /**
      * 改
      * @param team
@@ -82,6 +97,24 @@ public class TeamController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"更新队伍失败");
         }
         return ResultUtil.success(true);
+    }
+
+    /**
+     * 为什么需要request参数 —— 因为需要当前用户的状态
+     * @param teamQuery
+     * @param request
+     * @return
+     */
+    @GetMapping("/list/team")
+    public BaseResponse<List<TeamUserVO>> listTeams(TeamQuery teamQuery, HttpServletRequest request){
+        if (teamQuery == null){
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+//        boolean isAdmin = userService.isAdmin(request);request
+        User loginUser = userService.getLoginUser(request);
+        boolean isAdmin = userService.isAdmin(loginUser);
+        List<TeamUserVO>teamList = teamService.listTeams(teamQuery,isAdmin);
+        return ResultUtil.success(teamList);
     }
     @GetMapping("/list")
     public BaseResponse<List<Team>> getTeamList(TeamQuery teamQuery){
@@ -126,5 +159,14 @@ public class TeamController {
         BeanUtils.copyProperties(teamAddRequest,team);
         long teamId = teamService.addTeam(team, loginUser);
         return ResultUtil.success(teamId);
+    }
+    @PostMapping("/join")
+    public BaseResponse<Boolean> joinTeam(@RequestBody TeamJoinRequest teamJoinRequest,HttpServletRequest request) {
+        if (teamJoinRequest == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.joinTeam(teamJoinRequest,loginUser);
+        return ResultUtil.success(result);
     }
 }
