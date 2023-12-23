@@ -5,6 +5,7 @@ import com.aiyichen.admindemo.entity.User;
 import com.aiyichen.admindemo.entity.dto.TeamQuery;
 import com.aiyichen.admindemo.entity.request.TeamAddRequest;
 import com.aiyichen.admindemo.entity.request.TeamJoinRequest;
+import com.aiyichen.admindemo.entity.request.TeamQuitRequest;
 import com.aiyichen.admindemo.entity.request.TeamUpdateRequest;
 import com.aiyichen.admindemo.entity.vo.TeamUserVO;
 import com.aiyichen.admindemo.exception.BusinessException;
@@ -167,6 +168,34 @@ public class TeamController {
         }
         User loginUser = userService.getLoginUser(request);
         boolean result = teamService.joinTeam(teamJoinRequest,loginUser);
+        return ResultUtil.success(result);
+    }
+
+    /**
+     * 退出队伍接口
+     * @param teamQuitRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/quit")
+    public BaseResponse<Boolean> quitTeam(@RequestBody TeamQuitRequest teamQuitRequest,HttpServletRequest request) {
+        if (teamQuitRequest == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.quitTeam(teamQuitRequest,loginUser);
+        return ResultUtil.success(result);
+    }
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteTeam(@RequestBody long id,HttpServletRequest request) {
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.deleteTeam(id,loginUser);
+        if (!result) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"解散队伍失败");
+        }
         return ResultUtil.success(result);
     }
 }

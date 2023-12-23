@@ -4,6 +4,7 @@ import com.aiyichen.admindemo.entity.User;
 import com.aiyichen.admindemo.entity.UserTeam;
 import com.aiyichen.admindemo.entity.dto.TeamQuery;
 import com.aiyichen.admindemo.entity.request.TeamJoinRequest;
+import com.aiyichen.admindemo.entity.request.TeamQuitRequest;
 import com.aiyichen.admindemo.entity.request.TeamUpdateRequest;
 import com.aiyichen.admindemo.entity.vo.TeamUserVO;
 import com.aiyichen.admindemo.entity.vo.UserVO;
@@ -39,6 +40,27 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     private UserTeamService userTeamService;
     @Resource
     private UserService userService;
+
+    /**
+     * 根据teamId查询 当前有多少队员
+     * @param teamId
+     * @return
+     */
+    private long countTeamUserByTeamId(long teamId) {
+        QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
+        userTeamQueryWrapper.eq("team_id",teamId);
+        return userTeamService.count(userTeamQueryWrapper);
+    }
+    private Team getTeamById(Long teamId) {
+        if (teamId == null || teamId <= 0) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        Team team = this.getById(teamId);
+        if (team == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR,"没有这个队伍");
+        }
+        return team;
+    }
     @Transactional(rollbackFor = Exception.class)
     @Override
     public long addTeam(Team team, User loginUser) {
@@ -302,6 +324,105 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
 
 
     }
+
+    @Override
+    @Transactional(rollbackFor =  Exception.class)
+    public boolean quitTeam(TeamQuitRequest teamQuitRequest, User loginUser) {
+        if (teamQuitRequest == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        //1. 校验请求参数
+        //
+        Long teamId = teamQuitRequest.getTeamId();
+        if (teamId == null || teamId <= 0) {
+            throw new BusinessException(ErrorCode.NULL_ERROR,"teamid为空");
+        }
+        Team teamToQuit = this.getById(teamId);
+        if (teamToQuit == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR,"要退出的队伍不存在");
+        }
+        Long userId = loginUser.getId();
+        UserTeam queryUserTeam = new UserTeam();
+        queryUserTeam.setUserId(userId);
+        queryUserTeam.setTeamId(teamId);
+        QueryWrapper<UserTeam> queryWrapper = new QueryWrapper<>(queryUserTeam);
+        // 查这个队伍里面有咩有这个人
+        long count = userTeamService.count(queryWrapper);
+        if (count == 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"这个队伍里面没人");
+        }
+        long teamHasJoinNum = this.countTeamUserByTeamId(teamId);
+        // 队伍只剩下一个人 解散
+        if (teamHasJoinNum == 1) {
+            this.removeById(teamId);
+        }else {
+            // 队伍至少剩下两个人
+            if (teamToQuit.getUserId() == userId) {
+                // 队长要退出
+                // 把队伍转移给最早加入的用户
+                QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
+                userTeamQueryWrapper.eq("team_id",teamId);
+                // 按照id的升序获取前两条记录
+                userTeamQueryWrapper.last("order by id asc limit 2");
+                List<UserTeam> userTeamList = userTeamService.list(userTeamQueryWrapper);
+                if (CollectionUtils.isEmpty(userTeamList) || userTeamList.size() <= 1) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR);
+                }
+                UserTeam nextUserTeam = userTeamList.get(1);
+                Long nextTeamLeaderId = nextUserTeam.getUserId();
+                // 更新当前队伍的队长
+                Team updateTeam = new Team();
+                updateTeam.setUserId(nextTeamLeaderId);
+                updateTeam.setId(teamId);
+                boolean result = this.updateById(updateTeam);
+                if (!result) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR,"更新新队长失败");
+                }
+
+            }
+
+        }
+
+        // 有关队伍的更新都更新过了 接下来是把对应的userTeam记录删除
+        return userTeamService.remove(queryWrapper);
+        // 查这个队伍加入了多少人
+
+        //2. 如果队伍
+        //
+        //   1. 只有1人，队伍解散
+        //
+        //      删除队伍 删除所有userTeam关系
+        //
+        //   2. 不止一人
+        //
+        //      1. 如果是队长退出队伍，权限转移给第二早加入的用户
+        //      2. 不是队长，直接退
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteTeam(long id, User loginUser) {
+        // 校验队伍是否存在
+        Team teamToDelete = getTeamById(id);
+        Long teamToDeleteId = teamToDelete.getId();
+
+        if (!teamToDelete.getUserId().equals(loginUser.getId())) {
+            // 如果不是队伍的队长
+            throw new BusinessException(ErrorCode.NO_AUTH,"没有解散队伍的权限");
+        }
+        // 移除所有加入队伍的关联信息
+        QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
+        userTeamQueryWrapper.eq("team_id",id);
+        boolean result = userTeamService.remove(userTeamQueryWrapper);
+        if (!result) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"解散队伍失败");
+
+        }
+        // 删完UserTeam表
+        // 删Team表
+        return this.removeById(id);
+    }
+
 }
 
 
