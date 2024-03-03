@@ -199,4 +199,21 @@ public class UserController {
         }
         return true;
     }
+
+    /**
+     * 匹配TOP N个感兴趣的用户
+     * @param num
+     * @param request
+     * @return
+     */
+    @GetMapping("/match")
+    public BaseResponse<List<User>> matchUsers(long num, HttpServletRequest request){
+        if (num <= 0 || num > 20) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 获取当前的用户
+        User loginUser = userService.getLoginUser(request);
+        List<User>list = userService.getMatchUsers(num,loginUser);
+        return ResultUtil.success(list);
+    }
 }

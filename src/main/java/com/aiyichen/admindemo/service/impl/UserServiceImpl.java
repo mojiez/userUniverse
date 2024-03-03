@@ -1,6 +1,7 @@
 package com.aiyichen.admindemo.service.impl;
 
 import com.aiyichen.admindemo.exception.BusinessException;
+import com.aiyichen.admindemo.utils.AlgorithmUtils;
 import com.aiyichen.admindemo.utils.ErrorCode;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -10,11 +11,13 @@ import com.aiyichen.admindemo.mapper.UserMapper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
+import org.jboss.marshalling.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -277,6 +280,57 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean isAdmin(User loginUser) {
         return (loginUser != null && loginUser.getRole()==ADMIN_ROLE);
+    }
+
+    /**
+     * 推荐匹配用户
+     * @param num
+     * @param loginUser
+     * @return
+     */
+    @Override
+    public List<User> getMatchUsers(long num, User loginUser) {
+
+        // 优化思路：尽量只查需要的数据
+        // 1. 过滤掉标签为空的用户
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.isNotNull("tags");
+
+        // 2. 只查需要的部分 （比如id 和 tags）
+        queryWrapper.select("id","tags");
+
+        // 3. 查询用户列表
+
+        // 这里的this是对当前对象的引用 也就是UserServiceImpl类的实例的引用 这个类继承了ServiceImpl，其实现了各种方法
+        List<User> userList = this.list(queryWrapper);
+
+        // 获取当前登陆用户的标签
+        String current_user_tags =  loginUser.getTags();
+        // 将 ["java","男","大一"] 这样的字符串形式 转化为 List<String> 然后可以调用距离优先算法
+        Gson gson = new Gson();
+        List<String> tagList = gson.fromJson(current_user_tags, new TypeToken<List<String>>() {}.getType());
+
+        // 用户列表的下标 相似度
+        List<Pair<User,Integer>> list = new ArrayList<>();
+        // 依次计算当前用户和所有用户的相似度
+        for (int i=0;i<userList.size();i++) {
+            User user = userList.get(i);
+            String other_user_tags = user.getTags();
+            // 如果是当前用户自己  或者 没有标签 就跳过
+            if (StringUtils.isBlank(other_user_tags) || user.getId() == loginUser.getId()) {
+                continue;
+            }
+            // 提取出来其他用户的标签 并转为List<String>
+            List<String> other_tagList = gson.fromJson(other_user_tags, new TypeToken<List<String>>() {}.getType());
+            int distance = AlgorithmUtils.minDistance(tagList, other_tagList);
+
+            // 将 对应用户和分数存入List中
+            list.add(new Pair<>(user,distance));
+
+        }
+
+        // 按照编辑距离 由小到大 排序
+        
     }
 }
 

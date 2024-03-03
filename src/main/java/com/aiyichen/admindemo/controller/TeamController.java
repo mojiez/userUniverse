@@ -186,7 +186,7 @@ public class TeamController {
         boolean result = teamService.quitTeam(teamQuitRequest,loginUser);
         return ResultUtil.success(result);
     }
-    @PostMapping("/delete")
+    @PostMapping("/team/delete")
     public BaseResponse<Boolean> deleteTeam(@RequestBody long id,HttpServletRequest request) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.NULL_ERROR);
