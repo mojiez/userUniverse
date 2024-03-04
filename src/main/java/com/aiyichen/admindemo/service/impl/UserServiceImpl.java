@@ -19,6 +19,7 @@ import org.springframework.util.DigestUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -330,7 +331,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
 
         // 按照编辑距离 由小到大 排序
-        
+        List<Pair<User, Integer>> top_user_pair_list = list.stream()
+                // 从小到大进行排序
+                .sorted((a, b) -> (a.getB() - b.getB()))
+                .limit(num)
+                .toList();
+
+        // lambda表达式就是一种匿名函数 表示接收两个参数a b 返回他们的B属性的差值
+
+        // 有顺序的UserID列表
+        List<Long> userListVO = top_user_pair_list.stream()
+                .map(pair -> pair.getA().getId())
+                .toList();
+
+        // 根据id查询user的完整信息
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+
+        // 要求查询结果中 的 id字段 的值在 userListVO这个集合中
+        userQueryWrapper.in("id",userListVO);
+        Map<Long, List<User>> userIdUserListMap = this.list(userQueryWrapper).stream()
+                // Collectors.groupingBy(User::getId)
+                // 对流中的元素进行分组 也就是根据id值进行分组
+                // 最终结果是Map key是用户的ID 值是具有相同ID的用户对象的列表
+                .collect(Collectors.groupingBy(User::getId));
+
+        // 上面的查询 打乱了顺序
+        List<User> finalUserList = new ArrayList<>();
+        for (Long id : userListVO) {
+            finalUserList.add(userIdUserListMap.get(id).get(0));
+        }
+        return finalUserList;
     }
 }
 
