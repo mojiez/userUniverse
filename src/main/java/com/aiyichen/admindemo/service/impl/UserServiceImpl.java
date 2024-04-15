@@ -302,7 +302,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         // 3. 查询用户列表
 
-        // 这里的this是对当前对象的引用 也就是UserServiceImpl类的实例的引用 这个类继承了ServiceImpl，其实现了各种方法
+        // 这里的this是对当前对象的引用 也就是UserServiceImpl类的实例的引用 这个类继承了ServiceImpl，后者实现了各种方法
         List<User> userList = this.list(queryWrapper);
 
         // 获取当前登陆用户的标签

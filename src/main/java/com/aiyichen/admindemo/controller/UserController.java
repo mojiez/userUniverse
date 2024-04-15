@@ -213,7 +213,9 @@ public class UserController {
         }
         // 获取当前的用户
         User loginUser = userService.getLoginUser(request);
-        List<User>list = userService.getMatchUsers(num,loginUser);
+        User loginUserTrue = userService.getById(loginUser);
+
+        List<User>list = userService.getMatchUsers(num,loginUserTrue);
         return ResultUtil.success(list);
     }
 }
