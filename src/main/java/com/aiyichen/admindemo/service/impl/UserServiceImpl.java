@@ -95,6 +95,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public User userDoLogin(String account, String password, HttpServletRequest request) {
+        // 第一次登陆，保存一个session，将这个用户的信息放入session中保存
+
         // 1.校验
         if(account.isEmpty()||password.isEmpty()){
             return null;
@@ -217,6 +219,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 //            }.getType());
 //            Set<String> tempTagNameSet = gson.fromJson(tagstr, TAG_SET_TYPE);
 //            Set<String> tempTagNameSet =  gson.fromJson(tagstr,new TypeToken<Set<String>>(){}.getType());
+
+            // 将gson
             Set<String> tempTagNameSet =  gson.fromJson(tagstr,new TypeToken<Set<String>>(){}.getType());
             for (String tagName : tagNameList) {
                 if (!tempTagNameSet.contains(tagName)) {
